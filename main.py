@@ -96,3 +96,4 @@ except FileNotFoundError as e:
     st.error("⚠️ 파일을 찾을 수 없습니다. '서울_기온.csv'와 '양평_기온.csv' 파일이 이 파이썬 스크립트와 **같은 폴더**에 있는지 확인해주세요.")
 except Exception as e:
     st.error(f"⚠️ 에러가 발생했습니다: {e}")
+pip install streamlit pandas
