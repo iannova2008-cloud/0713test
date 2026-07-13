@@ -79,3 +79,4 @@ st.bar_chart(month_diff)
 # -----------------------------
 with st.expander("데이터 확인"):
     st.dataframe(df)
+pip install --upgrade streamlit pandas
