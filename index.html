@@ -3,27 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>전국 대기배출원조사 결과 대시보드</title>
+    <title>년도별 발전연료 사용량 추이 분석 대시보드</title>
     <!-- Chart.js 및 PapaParse 라이브러리 CDN 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <style>
         :root {
-            --primary: #1a365d;
-            --secondary: #2b6cb0;
-            --accent: #dd6b20;
-            --bg-gray: #f7fafc;
+            --primary: #2c3e50;
+            --secondary: #34495e;
+            --accent: #16a085;
+            --bg-gray: #f4f6f7;
             --card-bg: #ffffff;
-            --border: #e2e8f0;
-            --text-dark: #2d3748;
-            --text-muted: #718096;
+            --border: #d5dbdb;
+            --text-dark: #2c3e50;
+            --text-muted: #7f8c8d;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
         }
 
         body {
@@ -40,29 +40,29 @@
             max-width: 1280px;
         }
 
-        /* 대시보드 헤더 */
+        /* 대시보드 메인 헤더 */
         header {
             text-align: center;
             padding: 35px 20px;
-            background: linear-gradient(135deg, var(--primary), #2a4365);
+            background: linear-gradient(135deg, var(--primary), #1a252f);
             color: white;
-            border-radius: 14px;
+            border-radius: 12px;
             margin-bottom: 25px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
 
         header h1 {
-            font-size: 2.1rem;
+            font-size: 2.2rem;
             margin-bottom: 8px;
             font-weight: 700;
         }
 
         header p {
-            font-size: 1.05rem;
+            font-size: 1.1rem;
             opacity: 0.85;
         }
 
-        /* 알림 메시지 스크린 */
+        /* 에러 및 로딩 가이드라인 메시지 */
         #status-container {
             width: 100%;
             margin-bottom: 20px;
@@ -72,49 +72,43 @@
             border-radius: 8px;
             font-weight: 500;
         }
-        .alert-info { background-color: #ebf8ff; color: #2b6cb0; border: 1px solid #bee3f8; }
-        .alert-error { background-color: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        .alert-info { background-color: #e8f8f5; color: #117a65; border: 1px solid #a3e4d7; }
+        .alert-error { background-color: #fdf2e9; color: #b9770e; border: 1px solid #f5cbad; }
 
-        /* 다이내믹 필터 컨트롤러 */
+        /* 필터 대시보드 카드 */
         .filter-card {
             background: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
             border: 1px solid var(--border);
             margin-bottom: 25px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        }
-        .filter-card h3 {
-            font-size: 1.1rem;
-            color: var(--primary);
-            margin-bottom: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
         }
         .filter-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
             gap: 15px;
         }
         .filter-item {
             display: flex;
-            flex-direction: column;
-            gap: 5px;
+            align-items: center;
+            gap: 10px;
         }
         .filter-item label {
-            font-size: 0.85rem;
             font-weight: 600;
-            color: var(--text-muted);
+            color: var(--secondary);
         }
         .filter-item select {
-            padding: 10px;
-            border: 1px solid #cbd5e0;
+            padding: 8px 15px;
+            border: 1px solid #bdc3c7;
             border-radius: 6px;
             font-size: 0.95rem;
-            background-color: #fff;
             outline: none;
         }
-        .filter-item select:focus { border-color: var(--secondary); }
 
-        /* 주요 핵심 지표 (KPI) 위젯 */
+        /* 요약 지표 컴포넌트 */
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -130,10 +124,10 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.01);
         }
         .kpi-box .title { font-size: 0.85rem; color: var(--text-muted); font-weight: 600; }
-        .kpi-box .value { font-size: 1.75rem; font-weight: 700; color: var(--secondary); margin-top: 5px; }
-        .kpi-box .value.accent-color { color: var(--accent); }
+        .kpi-box .value { font-size: 1.65rem; font-weight: 700; color: var(--primary); margin-top: 5px; }
+        .kpi-box .unit { font-size: 0.85rem; color: var(--text-muted); font-weight: normal; }
 
-        /* 그리드 배치 및 차트 컨테이너 크기 제어 */
+        /* 시각화 그래픽 공간 배열 */
         .chart-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(550px, 1fr));
@@ -145,29 +139,27 @@
             padding: 20px;
             border-radius: 12px;
             border: 1px solid var(--border);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.01);
         }
         .chart-card h3 {
             font-size: 1.1rem;
             color: var(--primary);
             margin-bottom: 15px;
             padding-bottom: 8px;
-            border-bottom: 2px solid #edf2f7;
+            border-bottom: 2px solid #eaeded;
         }
         .chart-container {
             position: relative;
             width: 100%;
-            height: 380px;
+            height: 400px;
         }
 
-        /* 정보 인용구 영역 */
         blockquote {
-            border-left: 4px solid var(--secondary);
+            border-left: 4px solid var(--accent);
             padding-left: 15px;
             color: var(--text-muted);
             font-size: 0.9rem;
             margin-top: 20px;
-            line-height: 1.5;
+            line-height: 1.6;
         }
 
         @media (max-width: 768px) {
@@ -180,273 +172,270 @@
 
 <div class="container">
     <header>
-        <h1>🏭 전국 대기오염물질 배출사업장 및 시설 현황</h1>
-        <p>기후에너지환경부 국가미세먼지정보센터 대기배출원조사 결과 기반 데이터 분석 시스템</p>
+        <h1>📊 년도별 발전연료 사용량 추이 시각화</h1>
+        <p>HOME 발전·판매 통계 연계형 데이터 대시보드</p>
     </header>
 
-    <!-- 상태 알림 인디케이터 -->
+    <!-- 상태 알림 인디케이터 창 -->
     <div id="status-container">
-        <div class="alert alert-info" id="status-text">로컬 스토리지에서 대기배출원조사 결과 CSV 데이터를 동적 분석하는 중입니다...</div>
+        <div class="alert alert-info" id="status-text">동일 폴더 내의 CSV 파일 데이터셋 구조를 스캔하는 중입니다...</div>
     </div>
 
-    <!-- 데이터 연동형 검색 필터 -->
+    <!-- 동적 필터 보드 -->
     <div class="filter-card">
-        <h3>🔍 분석 필터 조건 설정</h3>
         <div class="filter-grid">
             <div class="filter-item">
-                <label for="sido-filter">시도 행정구역 선택</label>
-                <select id="sido-filter" onchange="processAndRender()"></select>
+                <label for="fuel-select">단독 상세 추이 분석 연료:</label>
+                <select id="fuel-select" onchange="renderCharts()">
+                    <option value="유연탄">유연탄 (1,000ton)</option>
+                    <option value="무연탄">무연탄 (1,000ton)</option>
+                    <option value="가스">가스 (1,000ton)</option>
+                    <option value="중유">중유 (1,000㎘)</option>
+                    <option value="경유">경유 (1,000㎘)</option>
+                </select>
             </div>
-            <div class="filter-item" style="justify-content: flex-end;">
-                <span id="data-count-label" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">분석 대상 행 수: 계산 중...</span>
-            </div>
+            <div id="data-range-label" style="font-size: 0.9rem; color: var(--text-muted); font-weight: 500;">분석 기간 데이터 범위 수집 중...</div>
         </div>
     </div>
 
-    <!-- 주요 요약 위젯 스크린 -->
+    <!-- 주요 요약 위젯 스크린 (최근 개년도 데이터 요약 자동 연산) -->
     <div class="kpi-grid">
         <div class="kpi-box">
-            <div class="title">총 사업장 수 (1~3종 전체)</div>
-            <div class="value" id="kpi-total-biz">0</div>
+            <div class="title">최근 유연탄 사용량</div>
+            <div class="value" id="kpi-coal-y">0 <span class="unit">1,000ton</span></div>
         </div>
         <div class="kpi-box">
-            <div class="title">총 배출구 등록 수</div>
-            <div class="value" id="kpi-total-outlet">0</div>
+            <div class="title">최근 가스(LNG) 사용량</div>
+            <div class="value" id="kpi-gas">0 <span class="unit">1,000ton</span></div>
         </div>
         <div class="kpi-box">
-            <div class="title">총 방지시설 설치 수</div>
-            <div class="value" id="kpi-total-prevent">0</div>
-        </div>
-        <div class="kpi-box">
-            <div class="title">총 배출시설 가동 수</div>
-            <div class="value accent-color" id="kpi-total-facility">0</div>
+            <div class="title">최근 총 발열량 합계</div>
+            <div class="value" id="kpi-calories" style="color: var(--accent);">0 <span class="unit">10^9 kcal</span></div>
         </div>
     </div>
 
-    <!-- 차트 배열 레이아웃 구조 -->
+    <!-- 차트 배열 레이아웃 -->
     <div class="chart-grid">
-        <!-- 1. 사업장 종별 규모 비교 (파이 차트) -->
+        <!-- 1. 전체 화석 연료 소비 트렌드 (누적 Stacked Bar) -->
         <div class="chart-card">
-            <h3>종별 사업장 구성 분포 (1종 / 2종 / 3종)</h3>
+            <h3>🔥 전체 발전원 연료별 사용량 추이 (화석연료군)</h3>
             <div class="chart-container">
-                <canvas id="gradePieChart"></canvas>
+                <canvas id="stackedBarChart"></canvas>
             </div>
         </div>
 
-        <!-- 2. 세부 시설물 현황 비교 (그룹 바 차트) -->
+        <!-- 2. 선택 연료 단독 정밀 추이 (Line + Trend 차트) -->
         <div class="chart-card">
-            <h3>대기 오염 관리 시설물 현황 비교 (배출구 vs 방지 vs 배출시설)</h3>
+            <h3>📈 선택된 연료의 연도별 소비량 상세 트렌드</h3>
             <div class="chart-container">
-                <canvas id="facilityBarChart"></canvas>
+                <canvas id="singleLineChart"></canvas>
             </div>
         </div>
 
-        <!-- 3. 시도별/시군구별 배출원 밀집도 (가로 바 차트) -->
+        <!-- 3. 총 발열량 추이 비교 (Area 차트) -->
         <div class="chart-card" style="grid-column: 1 / -1;">
-            <h3>📍 행정구역별 총 사업장 밀집도 (상위 20개 지역 분포)</h3>
-            <div class="chart-container" style="height: 480px;">
-                <canvas id="regionRankChart"></canvas>
+            <h3>⚡ 연도별 총 발전연료 발열량 변동 추이 ($10^9 \text{ kcal}$)</h3>
+            <div class="chart-container" style="height: 380px;">
+                <canvas id="caloriesAreaChart"></canvas>
             </div>
         </div>
     </div>
 
     <blockquote>
-        💡 <strong>데이터 가이드라인:</strong> 대기환경보전법에 따라 대기오염물질 배출량 규모가 가장 큰 사업장이 1종, 상대적으로 소규모인 곳이 3종으로 분류됩니다. 본 시스템은 각 지자체별로 인허가된 시설물 데이터셋의 합산량을 실시간 동적 매핑하여 시각화합니다.
+        📌 <strong>데이터 해석 참고사항:</strong> 제공된 <code>HOME_발전·판매_발전연료사용량추이.csv</code>의 순수 데이터 구조를 실시간 연동하여 구축한 시각화 결과입니다. 연도별 무연탄, 유연탄, 중유, 경유, 가스의 사용량과 이로 인한 총 열량($10^9\text{kcal}$) 변화를 연대기순으로 파악할 수 있습니다.
     </blockquote>
 </div>
 
 <script>
-    // 실제 감지된 파일명을 명확하게 선언
-    const FILE_NAME = '기후에너지환경부 국가미세먼지정보센터_대기배출원조사 결과_20231231.csv';
+    // 정확한 타겟 CSV 파일명 지정
+    const FILE_NAME = 'HOME_발전·판매_발전연료사용량추이.csv';
 
-    let csvRawData = [];
-    let pieChartObj = null;
-    let barChartObj = null;
-    let rankChartObj = null;
+    let dashboardData = [];
+    let chartStackedBar = null;
+    let chartSingleLine = null;
+    let chartCaloriesArea = null;
 
     window.addEventListener('DOMContentLoaded', () => {
-        loadDataFromCSV();
+        fetchData();
     });
 
-    // CSV 원격 파일 로딩 가동 엔진
-    async function loadDataFromCSV() {
+    async function fetchData() {
         try {
             const response = await fetch(encodeURIComponent(FILE_NAME));
-            if (!response.ok) throw new Error("네트워크 응답 오류");
+            if (!response.ok) throw new Error("네트워크 연동 실패");
 
             const arrayBuffer = await response.arrayBuffer();
-            // 공공데이터 표준 인코딩인 CP949(EUC-KR 호환) 디코딩 적용으로 한글 깨짐 원천 방지
-            const decoder = new TextDecoder('cp949');
-            const decodedText = decoder.decode(arrayBuffer);
+            
+            // 국내 공공데이터의 보편적 인코딩 형태인 cp949 디코딩 1차 시도
+            let decoder = new TextDecoder('cp949');
+            let decodedText = decoder.decode(arrayBuffer);
+
+            // 첫 번째 글자가 깨지는 경우 등을 방지하기 위해 utf-8과 안전 교차 점검
+            if (decodedText.includes('') || !decodedText.includes('연도')) {
+                decoder = new TextDecoder('utf-8');
+                decodedText = decoder.decode(arrayBuffer);
+            }
 
             Papa.parse(decodedText.trim(), {
                 header: true,
                 skipEmptyLines: true,
                 complete: function(results) {
-                    // 공공데이터 열 이름 앞뒤에 숨은 보이지 않는 공백 공포 제거 매핑
-                    csvRawData = results.data.map(row => {
-                        const cleanedRow = {};
-                        Object.keys(row).forEach(key => {
-                            cleanedRow[key.trim()] = row[key];
-                        });
-                        return cleanedRow;
+                    const parsedRows = results.data;
+
+                    // 0번 인덱스의 단위 행(1,000ton 등)을 스킵하고 실제 숫자 연도가 적힌 행부터 루프 필터링
+                    const cleanData = [];
+                    parsedRows.forEach((row, index) => {
+                        // 연도 컬럼이 유효한 숫자로 파싱 가능한지 확인
+                        const yearRaw = row['연도'] ? row['연도'].trim() : '';
+                        const yearNum = parseFloat(yearRaw);
+
+                        if (!isNaN(yearNum)) {
+                            // 천 단위 쉼표 제거 헬퍼 함수
+                            const cleanNum = (val) => parseFloat(String(val).replace(/,/g, '')) || 0;
+
+                            cleanData.push({
+                                year: Math.floor(yearNum),
+                                anth: cleanNum(row['무연탄']), // 무연탄
+                                bitu: cleanNum(row['유연탄']), // 유연탄
+                                heavyOil: cleanNum(row['중유']), // 중유
+                                lightOil: cleanNum(row['경유']), // 경유
+                                gas: cleanNum(row['가스']), // 가스
+                                calories: cleanNum(row['열량계10^9kcal']) // 총 열량
+                            });
+                        }
                     });
 
-                    if (csvRawData.length === 0 || !csvRawData[0]['시도명']) {
-                        showParsingError("열 구성 불일치", "CSV 파일 구조 혹은 열 매핑 이름이 올바르지 않습니다.");
+                    // 과거 연도부터 미래 연도(오름차순) 순으로 그래프 정렬 시각화 조율
+                    cleanData.sort((a, b) => a.year - b.year);
+                    dashboardData = cleanData;
+
+                    if (dashboardData.length === 0) {
+                        showError("데이터 가공 실패", "정상적인 연도별 발전연료 통계 정보를 행에서 파싱하지 못했습니다.");
                         return;
                     }
 
                     document.getElementById('status-container').style.display = 'none';
-                    buildSidoFilter();
-                    processAndRender();
+                    
+                    // 대시보드 인터페이스 갱신
+                    const minYear = dashboardData[0].year;
+                    const maxYear = dashboardData[dashboardData.length - 1].year;
+                    document.getElementById('data-range-label').innerText = `수집 및 분석 기간: ${minYear}년 ~ ${maxYear}년`;
+
+                    updateKPIs();
+                    renderCharts();
                 }
             });
+
         } catch (error) {
-            showParsingError("파일 연동 프로세스 실패", 
-                `동일 디렉토리 내부에서 <strong>${FILE_NAME}</strong> 파일을 로드할 수 없습니다.<br>` +
-                `GitHub Pages로 배포된 도메인 환경이거나, 로컬 가동 시 Live Server 등 로컬 웹서버 환경을 통해 가동해 주셔야 보안 정책(CORS) 오류 없이 정상 연동됩니다.`);
+            showError("CSV 데이터 바인딩 오류 안내",
+                `같은 디렉토리 내에 <strong>${FILE_NAME}</strong> 파일이 누락되었거나 찾을 수 없습니다.<br>` +
+                `GitHub Pages 환경에 정식 업로드하시거나, 로컬에서 구동하시는 경우 반드시 VS Code Live Server 등의 가상 웹 서버 환경을 가동해 열어주셔야 CORS 보안 차단 문제가 발생하지 않습니다.`);
         }
     }
 
-    function showParsingError(title, detail) {
-        const errorBox = document.getElementById('status-text');
-        errorBox.className = "alert alert-error";
-        errorBox.innerHTML = `<strong>❌ ${title}</strong><br><span style='font-size:0.9rem; font-weight:normal;'>${detail}</span>`;
+    function showError(title, message) {
+        const statusBox = document.getElementById('status-text');
+        statusBox.className = "alert alert-error";
+        statusBox.innerHTML = `<strong>❌ ${title}</strong><br><span style='font-size:0.9rem; font-weight:normal;'>${message}</span>`;
     }
 
-    // 시도 카테고리 고유값 추출 필터 컴포넌트 빌드
-    function buildSidoFilter() {
-        const sidos = new Set(['전국 전체']);
-        csvRawData.forEach(row => {
-            if (row['시도명']) sidos.add(row['시도명'].trim());
-        });
-
-        const filterSelect = document.getElementById('sido-filter');
-        filterSelect.innerHTML = '';
-        sidos.forEach(s => {
-            const option = document.createElement('option');
-            option.value = s === '전국 전체' ? 'all' : s;
-            option.innerText = s;
-            filterSelect.appendChild(option);
-        });
+    // 최신 연도 기준 메인 스탯 위젯 값 연산 매핑
+    function updateKPIs() {
+        const latest = dashboardData[dashboardData.length - 1];
+        if (latest) {
+            document.getElementById('kpi-coal-y').innerHTML = `${latest.bitu.toLocaleString()} <span class="unit">1,000ton</span>`;
+            document.getElementById('kpi-gas').innerHTML = `${latest.gas.toLocaleString()} <span class="unit">1,000ton</span>`;
+            document.getElementById('kpi-calories').innerHTML = `${latest.calories.toLocaleString()} <span class="unit">10^9 kcal</span>`;
+        }
     }
 
-    // 필터링 적용 연산 및 그래프 가동 핵심 비즈니스 로직
-    function processAndRender() {
-        const selectedSido = document.getElementById('sido-filter').value;
+    // 전체 시각화 컴포넌트 렌더링 엔진 가동
+    function renderCharts() {
+        const labels = dashboardData.map(d => `${d.year}년`);
+        const selectedFuelKey = document.getElementById('fuel-select').value;
 
-        // 1. 행정구역 조건 필터링
-        const filteredData = csvRawData.filter(row => {
-            if (selectedSido === 'all') return true;
-            return row['시도명']?.trim() === selectedSido;
-        });
-
-        document.getElementById('data-count-label').innerText = `분석 대상 관측 행 수: ${filteredData.length.toLocaleString()} 건`;
-
-        // 2. 누적 데이터 합산 변수 초기화
-        let biz1 = 0, biz2 = 0, biz3 = 0;
-        let out1 = 0, out2 = 0, out3 = 0;
-        let prv1 = 0, prv2 = 0, prv3 = 0;
-        let fac1 = 0, fac2 = 0, fac3 = 0;
-
-        // 행정구역 랭킹용 집계 맵
-        const rankMap = {};
-
-        filteredData.forEach(row => {
-            // 안전한 정수형 데이터 파싱
-            const b1 = parseInt(row['사업장 수(1종)']) || 0;
-            const b2 = parseInt(row['사업장 수(2종)']) || 0;
-            const b3 = parseInt(row['사업장 수(3종)']) || 0;
-
-            biz1 += b1; biz2 += b2; biz3 += b3;
-            out1 += parseInt(row['배출구 수(1종)']) || 0;
-            out2 += parseInt(row['배출구 수(2종)']) || 0;
-            out3 += parseInt(row['배출구 수(3종)']) || 0;
-            prv1 += parseInt(row['방지시설 수(1종)']) || 0;
-            prv2 += parseInt(row['방지시설 수(2종)']) || 0;
-            prv3 += parseInt(row['방지시설 수(3종)']) || 0;
-            fac1 += parseInt(row['배출시설 수(1종)']) || 0;
-            fac2 += parseInt(row['배출시설 수(2종)']) || 0;
-            fac3 += parseInt(row['배출시설 수(3종)']) || 0;
-
-            // 랭킹 키 설정 (전국단위면 시도명, 특정시도 단위면 시군구명 매핑)
-            const rankKey = selectedSido === 'all' ? row['시도명']?.trim() : row['시군구명']?.trim();
-            if (rankKey) {
-                rankMap[rankKey] = (rankMap[rankKey] || 0) + (b1 + b2 + b3);
-            }
-        });
-
-        // 3. KPI 대시보드 텍스트 바인딩
-        const totalBiz = biz1 + biz2 + biz3;
-        const totalOutlet = out1 + out2 + out3;
-        const totalPrevent = prv1 + prv2 + prv3;
-        const totalFacility = fac1 + fac2 + fac3;
-
-        document.getElementById('kpi-total-biz').innerText = totalBiz.toLocaleString();
-        document.getElementById('kpi-total-outlet').toLocaleString();
-        document.getElementById('kpi-total-outlet').innerText = totalOutlet.toLocaleString();
-        document.getElementById('kpi-total-prevent').innerText = totalPrevent.toLocaleString();
-        document.getElementById('kpi-total-facility').innerText = totalFacility.toLocaleString();
-
-        // --- 차트 ①: 사업장 종별 Pie Chart ---
-        if (pieChartObj) pieChartObj.destroy();
-        pieChartObj = new Chart(document.getElementById('gradePieChart').getContext('2d'), {
-            type: 'pie',
-            data: {
-                labels: ['1종 사업장 (대형)', '2종 사업장 (중형)', '3종 사업장 (소형)'],
-                datasets: [{
-                    data: [biz1, biz2, biz3],
-                    backgroundColor: ['#e53e3e', '#4299e1', '#48bb78']
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-
-        // --- 차트 ②: 세부 시설물 Bar Chart ---
-        if (barChartObj) barChartObj.destroy();
-        barChartObj = new Chart(document.getElementById('facilityBarChart').getContext('2d'), {
+        // --- ① 전체 화석연료 스택 바 차트 생성 ---
+        if (chartStackedBar) chartStackedBar.destroy();
+        chartStackedBar = new Chart(document.getElementById('stackedBarChart').getContext('2d'), {
             type: 'bar',
             data: {
-                labels: ['1종 영역', '2종 영역', '3종 영역'],
+                labels: labels,
                 datasets: [
-                    { label: '배출구 수', data: [out1, out2, out3], backgroundColor: '#4a5568' },
-                    { label: '방지시설 수', data: [prv1, prv2, prv3], backgroundColor: '#ed8936' },
-                    { label: '배출시설 수', data: [fac1, fac2, fac3], backgroundColor: '#319795' }
+                    { label: '유연탄', data: dashboardData.map(d => d.bitu), backgroundColor: '#566573' },
+                    { label: '가스', data: dashboardData.map(d => d.gas), backgroundColor: '#5dabaf' },
+                    { label: '무연탄', data: dashboardData.map(d => d.anth), backgroundColor: '#a6acaf' },
+                    { label: '중유', data: dashboardData.map(d => d.heavyOil), backgroundColor: '#d35400' },
+                    { label: '경유', data: dashboardData.map(d => d.lightOil), backgroundColor: '#f1c40f' }
                 ]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { y: { beginAtZero: true } }
+                scales: {
+                    x: { stacked: true },
+                    y: { stacked: true, title: { display: true, text: '사용량 합산 (단위별 요약)' } }
+                },
+                plugins: { legend: { position: 'bottom' } }
             }
         });
 
-        // --- 차트 ③: 행정구역별 랭킹 가로형 Bar Chart ---
-        const sortedLabels = Object.keys(rankMap).sort((a, b) => rankMap[b] - rankMap[a]).slice(0, 20);
-        const sortedData = sortedLabels.map(label => rankMap[label]);
+        // --- ② 특정 연료 단독 트렌드 라인 차트 생성 ---
+        let singlePlotData = [];
+        let colorTheme = '#16a085';
 
-        if (rankChartObj) rankChartObj.destroy();
-        rankChartObj = new Chart(document.getElementById('regionRankChart').getContext('2d'), {
-            type: 'bar',
+        if (selectedFuelKey === '유연탄') { singlePlotData = dashboardData.map(d => d.bitu); colorTheme = '#566573'; }
+        else if (selectedFuelKey === '무연탄') { singlePlotData = dashboardData.map(d => d.anth); colorTheme = '#a6acaf'; }
+        else if (selectedFuelKey === '가스') { singlePlotData = dashboardData.map(d => d.gas); colorTheme = '#5dabaf'; }
+        else if (selectedFuelKey === '중유') { singlePlotData = dashboardData.map(d => d.heavyOil); colorTheme = '#d35400'; }
+        else if (selectedFuelKey === '경유') { singlePlotData = dashboardData.map(d => d.lightOil); colorTheme = '#f1c40f'; }
+
+        if (chartSingleLine) chartSingleLine.destroy();
+        chartSingleLine = new Chart(document.getElementById('singleLineChart').getContext('2d'), {
+            type: 'line',
             data: {
-                labels: sortedLabels,
+                labels: labels,
                 datasets: [{
-                    label: '총 사업장 수 합계',
-                    data: sortedData,
-                    backgroundColor: '#2b6cb0',
-                    borderRadius: 5
+                    label: `${selectedFuelKey} 추이 분석`,
+                    data: singlePlotData,
+                    borderColor: colorTheme,
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    pointRadius: 4,
+                    tension: 0.1
                 }]
             },
             options: {
-                indexAxis: 'y',
                 responsive: true,
                 maintainAspectRatio: false,
-                scales: { x: { beginAtZero: true } }
+                scales: { y: { beginAtZero: false } },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        // --- ③ 총 발열량 추이 Area 차트 생성 ---
+        if (chartCaloriesArea) chartCaloriesArea.destroy();
+        chartCaloriesArea = new Chart(document.getElementById('caloriesAreaChart').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '총 발열량 (10^9 kcal)',
+                    data: dashboardData.map(d => d.calories),
+                    borderColor: '#16a085',
+                    backgroundColor: 'rgba(22, 160, 133, 0.15)',
+                    fill: true,
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { title: { display: true, text: '열량 지표' } }
+                },
+                plugins: { legend: { position: 'top' } }
             }
         });
     }
